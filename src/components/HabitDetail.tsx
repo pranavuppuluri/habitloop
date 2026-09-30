@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { friendlyDate, fromKey } from '../lib/date'
 import { getEntry, habitStats } from '../lib/stats'
 import { colorVar, type AppData, type Habit } from '../lib/types'
-import { MonthHeat } from './MonthHeat'
+import { StreakCalendar } from './charts/StreakCalendar'
+import { YearHeat } from './charts/YearHeat'
 import { Sheet } from './Sheet'
 import { Archive, Left, Pencil, Right, Trash } from './icons'
 
@@ -156,7 +157,20 @@ export function HabitDetail({
         </div>
       </div>
 
-      <MonthHeat data={data} habit={habit} year={cursor.year} month={cursor.month} onShift={shiftMonth} />
+      <StreakCalendar
+        data={data}
+        habit={habit}
+        year={cursor.year}
+        month={cursor.month}
+        onShift={shiftMonth}
+      />
+
+      <section className="panel">
+        <div className="panel-head">
+          <span className="panel-title">The last year</span>
+        </div>
+        <YearHeat data={data} habitId={habit.id} hue={color} weeks={40} />
+      </section>
 
       <div className="field" style={{ marginTop: 18, marginBottom: 0 }}>
         <label htmlFor="habit-note">Note for {friendlyDate(date).toLowerCase()}</label>

@@ -490,7 +490,7 @@ export default function App() {
                   <p className="page-sub">How every habit has held up so far.</p>
                 </div>
               </header>
-              <Progress data={data} />
+              <Progress data={data} onOpenHabit={(id) => setDetailId(id)} />
             </>
           )}
 

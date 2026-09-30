@@ -145,3 +145,59 @@ export function monthGrid(year: number, month: number): (string | null)[] {
 export function daysSince(dateKey: string): number {
   return Math.max(0, diffDays(todayKey(), dateKey))
 }
+
+export interface WeekdayStat {
+  weekday: number
+  done: number
+  scheduled: number
+  rate: number
+}
+
+/**
+ * How well each weekday holds up. Answers "I keep saying I'll do this on
+ * Sundays" with a number. Scoped to one habit, or across all of them.
+ */
+export function weekdayBreakdown(data: AppData, dates: string[], habitId?: string): WeekdayStat[] {
+  const tally = Array.from({ length: 7 }, (_, weekday) => ({ weekday, done: 0, scheduled: 0, rate: 0 }))
+  const habits = habitId
+    ? data.habits.filter((h) => h.id === habitId)
+    : data.habits.filter((h) => !h.archived)
+
+  for (const date of dates) {
+    const weekday = weekdayOf(date)
+    for (const habit of habits) {
+      if (!isScheduled(habit, date)) continue
+      if (date < habit.createdAt.slice(0, 10)) continue
+      const entry = getEntry(data, habit.id, date)
+      if (entry?.skipped) continue
+      tally[weekday].scheduled++
+      if ((entry?.value ?? 0) >= habit.target) tally[weekday].done++
+    }
+  }
+
+  for (const t of tally) t.rate = t.scheduled === 0 ? 0 : t.done / t.scheduled
+  return tally
+}
+
+/** A rolling mean, used to lay a trend over noisy daily bars. */
+export function rollingMean(series: number[], window: number): (number | null)[] {
+  return series.map((_, i) => {
+    if (i < window - 1) return null
+    let sum = 0
+    for (let k = i - window + 1; k <= i; k++) sum += series[k]
+    return sum / window
+  })
+}
+
+/** Share of a day's habits finished, for one habit or all of them. */
+export function dayShare(data: AppData, date: string, habitId?: string): number {
+  if (!habitId) {
+    const { done, total } = dayProgress(data, date)
+    return total === 0 ? 0 : done / total
+  }
+  const habit = data.habits.find((h) => h.id === habitId)
+  if (!habit || !isScheduled(habit, date)) return 0
+  const entry = getEntry(data, habit.id, date)
+  if (entry?.skipped) return 0
+  return Math.min(1, habit.target === 0 ? 0 : (entry?.value ?? 0) / habit.target)
+}

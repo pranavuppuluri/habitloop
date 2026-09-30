@@ -5,23 +5,70 @@ day, and watch each streak build. Free to host end to end.
 
 - **Today** — habits grouped into morning / afternoon / evening / any time, with
   a ring you tap to check off. Counted habits (8 glasses of water) fill the ring
-  a tap at a time.
+  a tap at a time. Drag rows to reorder them.
+- **Streak calendar** — a month grid where an unbroken run is drawn as one
+  continuous bar. A streak that carries past Saturday keeps a flush edge and
+  resumes flush on the next row, so the only rounded ends in the month are where
+  a streak actually started and stopped.
 - **Streak thread** — every row carries a bar chart of its last twelve days, so
   gaps are as visible as runs.
 - **Day rail** — seven days at a glance, each with a meter of how much of that
   day got finished. Past days are editable; future days are not.
-- **Per-habit detail** — current streak, best run, completion rate, a month heat
-  calendar, and a note per day.
-- **Progress** — 30-day completion trend plus a table of every habit.
+- **Progress** — completion trend over 30 / 90 / 365 days with a seven-day
+  average, a day-of-the-week breakdown, a year heatmap, per-habit sparklines,
+  and a table of the same numbers. Scope any of it to one habit.
+- **Per-habit detail** — current streak, best run, completion rate, the streak
+  calendar, a 40-week heatmap, and a note per day.
+- **Areas** — group habits into parts of your life and filter the list by one.
+- **Reminders** — a per-habit time that fires a local notification while the app
+  is open, including a background tab or the installed app.
+- **Installable** — add it to a phone home screen or desktop; the service worker
+  caches the shell and fonts, so it opens and works with no connection.
 - Skip a day (keeps the streak alive without counting toward it), archive a
   habit without losing its history, dark and light themes, works down to phone
   width, keyboard accessible.
+
+## Colour, and why there are five
+
+The habit palette is five colours rather than the eight this started with,
+because eight did not survive testing. Any two habits can sit side by side, so
+every pair has to be distinguishable — not just neighbours in a fixed order.
+Under that test the original set failed badly: rose and clay sat at ΔE 9.0 for
+normal vision, and amber and lime at ΔE 1.4 for a red-green colourblind reader.
+
+Six, seven and eight colours cannot reach the ΔE 6 colourblind floor at all.
+Five reaches normal-vision ΔE 18.3 and colourblind ΔE 6.0, which is acceptable
+only alongside a second, non-colour channel — and this UI always has one, since a
+habit's colour never appears without its name and emoji next to it.
+`scripts/pick-palette.mjs` is the search that settled it; dark mode is its own
+validated set rather than a flipped copy.
+
+Charts follow from that: anything about **one** habit is a sequential ramp in
+that habit's own hue, anything about **all** habits is monochrome, and per-habit
+comparison is done with small multiples. No chart ever asks you to tell palette
+colours apart.
+
+## Reminders, honestly
+
+Reminders are local notifications scheduled by the open page. They fire while
+Habitloop is open — a background tab counts, and so does the installed app — and
+they do **not** fire once it is fully closed.
+
+Firing when the app is closed needs a server to send a push message: a service
+worker only shows a notification when something wakes it, and nothing on static
+hosting does that on a schedule. (The browser API that would have allowed true
+offline scheduling never shipped.) So background reminders are a cloud-backend
+feature — a scheduled job sending Web Push — and until that exists, this is the
+version that does not overpromise.
 
 ## Run it locally
 
 ```bash
 npm install
-npm run dev
+npm run dev      # start the app
+npm test         # streak maths + render smoke tests
+npm run build    # type-check, bundle, generate the service worker
+npm run icons    # regenerate the PWA icons from scripts/make-icons.mjs
 ```
 
 Open the URL it prints. Create an account and start adding habits — no server
@@ -117,11 +164,17 @@ nothing else changes.
 
 ```
 src/
-  lib/          types, local-date helpers, streak and stats maths
-  backend/      one interface, two implementations (localStorage, Supabase)
-  components/   UI
-supabase/       schema.sql — tables and row-level security
+  lib/            types, colours, local-date helpers, streak and stats maths
+  backend/        one interface, two implementations (localStorage, Supabase)
+  components/
+    charts/       hand-drawn SVG: streak calendar, trend, weekday, year heat
+  test/           render smoke tests (jsdom)
+scripts/          palette search, icon generation, calendar geometry preview
+supabase/         schema.sql — tables and row-level security
 ```
+
+Tests cover the streak maths against hand-worked cases, and render the app far
+enough to prove every chart draws rather than throwing into an empty panel.
 
 Dates are handled as local-calendar `YYYY-MM-DD` strings throughout, never as
 UTC instants, so a check-in at 11pm belongs to the day you were actually living

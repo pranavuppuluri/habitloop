@@ -1,25 +1,43 @@
-import { dayRange, fromKey, monthName, todayKey } from '../lib/date'
-import { completionSeries, habitStats } from '../lib/stats'
-import { colorVar, type AppData } from '../lib/types'
+import { useMemo, useState } from 'react'
+import { dayRange, todayKey } from '../lib/date'
+import { completionSeries, dayShare, habitStats, weekdayBreakdown } from '../lib/stats'
+import { colorVar, type AppData, type Habit } from '../lib/types'
+import { TrendChart } from './charts/TrendChart'
+import { WeekdayBars } from './charts/WeekdayBars'
+import { YearHeat } from './charts/YearHeat'
 
 interface ProgressProps {
   data: AppData
+  onOpenHabit: (id: string) => void
 }
 
-const WINDOW = 30
+const PERIODS = [
+  { key: 30, label: '30d' },
+  { key: 90, label: '90d' },
+  { key: 365, label: '1y' },
+] as const
 
-export function Progress({ data }: ProgressProps) {
-  const active = data.habits.filter((h) => !h.archived)
-  const dates = dayRange(todayKey(), WINDOW)
-  const series = completionSeries(data, dates)
-  const rows = active
-    .map((habit) => ({ habit, stats: habitStats(data, habit) }))
-    .sort((a, b) => b.stats.streak - a.stats.streak)
+export function Progress({ data, onOpenHabit }: ProgressProps) {
+  const [days, setDays] = useState<number>(30)
+  const [focus, setFocus] = useState<string | null>(null)
 
-  const totalDone = rows.reduce((n, r) => n + r.stats.doneDays, 0)
-  const bestStreak = rows.reduce((n, r) => Math.max(n, r.stats.best), 0)
-  const liveStreaks = rows.filter((r) => r.stats.streak > 0).length
-  const avgRate = rows.length === 0 ? 0 : rows.reduce((n, r) => n + r.stats.rate, 0) / rows.length
+  const active = useMemo(() => data.habits.filter((h) => !h.archived), [data.habits])
+  const dates = useMemo(() => dayRange(todayKey(), days), [days])
+  const focused = focus ? (active.find((h) => h.id === focus) ?? null) : null
+
+  const series = useMemo(
+    () => (focused ? dates.map((d) => dayShare(data, d, focused.id)) : completionSeries(data, dates)),
+    [data, dates, focused],
+  )
+  const weekdays = useMemo(() => weekdayBreakdown(data, dates, focused?.id), [data, dates, focused])
+
+  const rows = useMemo(
+    () =>
+      active
+        .map((habit) => ({ habit, stats: habitStats(data, habit) }))
+        .sort((a, b) => b.stats.streak - a.stats.streak),
+    [active, data],
+  )
 
   if (active.length === 0) {
     return (
@@ -29,6 +47,15 @@ export function Progress({ data }: ProgressProps) {
       </div>
     )
   }
+
+  const hue = focused ? colorVar(focused.color) : undefined
+  const scope = focused ? `${focused.icon} ${focused.name}` : 'All habits'
+
+  const totalDone = rows.reduce((n, r) => n + r.stats.doneDays, 0)
+  const bestStreak = rows.reduce((n, r) => Math.max(n, r.stats.best), 0)
+  const liveStreaks = rows.filter((r) => r.stats.streak > 0).length
+  const avgRate = rows.reduce((n, r) => n + r.stats.rate, 0) / rows.length
+  const windowRate = series.length ? series.reduce((a, b) => a + b, 0) / series.length : 0
 
   return (
     <>
@@ -60,19 +87,80 @@ export function Progress({ data }: ProgressProps) {
         </div>
       </div>
 
+      {/* One filter row, controlling every chart below it. */}
       <section className="panel">
-        <div className="panel-head">
-          <span className="panel-title">Last {WINDOW} days</span>
-          <span className="mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-            share of each day finished
-          </span>
+        <div className="panel-head" style={{ flexWrap: 'wrap', rowGap: 8 }}>
+          <span className="panel-title">{scope}</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="seg" role="group" aria-label="Scope">
+              <button aria-pressed={focus === null} onClick={() => setFocus(null)}>
+                All
+              </button>
+              {active.slice(0, 6).map((h) => (
+                <button key={h.id} aria-pressed={focus === h.id} onClick={() => setFocus(h.id)} title={h.name}>
+                  <span aria-hidden="true">{h.icon}</span>
+                  <span className="sr-only">{h.name}</span>
+                </button>
+              ))}
+            </div>
+            <div className="seg" role="group" aria-label="Time range">
+              {PERIODS.map((p) => (
+                <button key={p.key} aria-pressed={days === p.key} onClick={() => setDays(p.key)}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <Bars dates={dates} series={series} />
+
+        <TrendChart dates={dates} series={series} hue={hue} />
+        <p className="help" style={{ marginTop: 10 }}>
+          {Math.round(windowRate * 100)}% finished on average over the last {days} days. The line is a
+          seven-day average.
+        </p>
       </section>
 
       <section className="panel">
         <div className="panel-head">
+          <span className="panel-title">Day of the week</span>
+        </div>
+        <WeekdayBars stats={weekdays} hue={hue} />
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <span className="panel-title">The last year</span>
+        </div>
+        <YearHeat data={data} habitId={focused?.id} hue={hue} />
+      </section>
+
+      {/* Small multiples: hue identifies a habit safely here because each gets its
+          own row and its own name, rather than competing inside one plot. */}
+      <section className="panel">
+        <div className="panel-head">
           <span className="panel-title">Every habit</span>
+          <span className="mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+            last {Math.min(days, 60)} days
+          </span>
+        </div>
+
+        {rows.map(({ habit, stats }) => (
+          <HabitSparkRow
+            key={habit.id}
+            habit={habit}
+            data={data}
+            days={Math.min(days, 60)}
+            rate={stats.rate}
+            streak={stats.streak}
+            onOpen={() => onOpenHabit(habit.id)}
+          />
+        ))}
+      </section>
+
+      {/* The table is the accessible read of the same numbers. */}
+      <section className="panel">
+        <div className="panel-head">
+          <span className="panel-title">All time</span>
         </div>
         <table className="table">
           <thead>
@@ -108,46 +196,55 @@ export function Progress({ data }: ProgressProps) {
   )
 }
 
-/** Bar per day. Height is the share of that day's habits finished. */
-function Bars({ dates, series }: { dates: string[]; series: number[] }) {
-  const W = 100
-  const H = 30
-  const gap = 0.5
-  const barW = W / dates.length - gap
+interface SparkRowProps {
+  habit: Habit
+  data: AppData
+  days: number
+  rate: number
+  streak: number
+  onOpen: () => void
+}
+
+function HabitSparkRow({ habit, data, days, rate, streak, onOpen }: SparkRowProps) {
+  const dates = dayRange(todayKey(), days)
+  const hue = colorVar(habit.color)
 
   return (
-    <>
-      <svg className="trend" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img"
-        aria-label={`Daily completion over the last ${dates.length} days`}>
-        <line x1="0" y1={H} x2={W} y2={H} stroke="var(--line)" strokeWidth="0.3" vectorEffect="non-scaling-stroke" />
-        <line x1="0" y1={H / 2} x2={W} y2={H / 2} stroke="var(--line)" strokeWidth="0.3" strokeDasharray="1 1"
-          vectorEffect="non-scaling-stroke" />
-        {series.map((share, i) => {
-          const h = Math.max(share > 0 ? 0.8 : 0.3, share * H)
-          return (
-            <rect
-              key={dates[i]}
-              x={i * (barW + gap)}
-              y={H - h}
-              width={barW}
-              height={h}
-              rx="0.6"
-              fill={share > 0 ? 'var(--ink)' : 'var(--miss)'}
-              opacity={share > 0 ? 0.35 + share * 0.65 : 1}
-            >
-              <title>{`${dates[i]}: ${Math.round(share * 100)}%`}</title>
-            </rect>
-          )
-        })}
-      </svg>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-        <span className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
-          {fromKey(dates[0]).getDate()} {monthName(fromKey(dates[0]).getMonth())}
-        </span>
-        <span className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>
-          Today
-        </span>
+    <div className="sm-row">
+      <div>
+        <button className="sm-head sm-head-btn" onClick={onOpen}>
+          <span className="nav-dot" style={{ background: hue }} />
+          <span>
+            {habit.icon} {habit.name}
+          </span>
+          <span className="mono" style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--ink-3)' }}>
+            {streak}d
+          </span>
+        </button>
+        <div
+          className="sm-spark"
+          role="img"
+          aria-label={`${habit.name}: ${Math.round(rate * 100)} percent finished over ${days} days`}
+        >
+          {dates.map((d) => {
+            const share = dayShare(data, d, habit.id)
+            return (
+              <i
+                key={d}
+                title={`${d}: ${Math.round(share * 100)}%`}
+                style={{
+                  height: share > 0 ? `${Math.max(18 * share, 4)}px` : '2px',
+                  background: share > 0 ? hue : 'var(--miss)',
+                  opacity: share > 0 ? 0.35 + share * 0.65 : 1,
+                }}
+              />
+            )
+          })}
+        </div>
       </div>
-    </>
+      <div className="sm-rate">
+        {Math.round(rate * 100)}%<small>kept</small>
+      </div>
+    </div>
   )
 }
