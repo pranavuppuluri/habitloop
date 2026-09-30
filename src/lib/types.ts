@@ -7,26 +7,26 @@ export const TIMES_OF_DAY: { key: TimeOfDay; label: string; hint: string }[] = [
   { key: 'anytime', label: 'Any time', hint: 'Whenever it fits' },
 ]
 
-/** Chrome stays monochrome; all colour in the app comes from the user's habits. */
-export const HABIT_COLORS = {
-  indigo: '#5B6CFF',
-  teal: '#0E9E9E',
-  lime: '#69A833',
-  amber: '#D9922B',
-  clay: '#C4704E',
-  rose: '#DD5C77',
-  violet: '#8E5FE0',
-  sky: '#3390DB',
-} as const
-
-export type ColorKey = keyof typeof HABIT_COLORS
-export const COLOR_KEYS = Object.keys(HABIT_COLORS) as ColorKey[]
+// The habit palette and its helpers live in ./colors, which carries the search
+// and the validation results that decided it.
+export {
+  HABIT_COLORS,
+  HABIT_INKS,
+  COLOR_KEYS,
+  COLOR_LABELS,
+  colorKey,
+  colorVar,
+  inkVar,
+  nextColor,
+} from './colors'
+export type { ColorKey } from './colors'
 
 export interface Habit {
   id: string
   name: string
   icon: string
-  color: ColorKey
+  /** A palette key; retired keys may still be present, so normalise with colorKey(). */
+  color: string
   /** How many units count as a finished day. 1 for a plain yes/no habit. */
   target: number
   /** Plural noun for the unit, e.g. "times", "glasses", "pages". */
@@ -62,7 +62,8 @@ export interface Entry {
 export interface HabitDraft {
   name: string
   icon: string
-  color: ColorKey
+  /** A palette key; retired keys may still be present, so normalise with colorKey(). */
+  color: string
   target: number
   unit: string
   timeOfDay: TimeOfDay

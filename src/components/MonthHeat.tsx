@@ -1,6 +1,6 @@
 import { fromKey, monthName, todayKey, WEEKDAY_SHORT } from '../lib/date'
 import { dayState, monthGrid } from '../lib/stats'
-import { HABIT_COLORS, type AppData, type Habit } from '../lib/types'
+import { colorVar, type AppData, type Habit } from '../lib/types'
 import { Left, Right } from './icons'
 
 interface MonthHeatProps {
@@ -19,7 +19,7 @@ export function MonthHeat({ data, habit, year, month, onShift, onPick }: MonthHe
     year === fromKey(today).getFullYear() && month === fromKey(today).getMonth()
 
   return (
-    <section className="panel" style={{ ['--habit' as string]: HABIT_COLORS[habit.color] }}>
+    <section className="panel" style={{ ['--habit' as string]: colorVar(habit.color) }}>
       <div className="panel-head">
         <span className="panel-title">
           {monthName(month)} {year}
@@ -60,10 +60,10 @@ export function MonthHeat({ data, habit, year, month, onShift, onPick }: MonthHe
 
       <div className="legend">
         <span>
-          <i style={{ background: HABIT_COLORS[habit.color] }} /> Done
+          <i style={{ background: colorVar(habit.color) }} /> Done
         </span>
         <span>
-          <i style={{ background: `color-mix(in srgb, ${HABIT_COLORS[habit.color]} 42%, var(--surface-2))` }} /> Partial
+          <i style={{ background: `color-mix(in srgb, ${colorVar(habit.color)} 42%, var(--surface-2))` }} /> Partial
         </span>
         <span>
           <i style={{ background: 'var(--miss)' }} /> Missed

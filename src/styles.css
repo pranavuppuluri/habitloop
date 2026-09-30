@@ -29,6 +29,21 @@
   --r-lg: 18px;
   --sidebar-w: 236px;
 
+  /* Habit palette - validated all-pairs against this surface. See lib/colors.ts.
+     Five steps: normal-vision ΔE 18.3, colourblind ΔE 6.0 with name+icon as the
+     second channel. Inks are chosen by measured contrast, not by assuming white. */
+  --habit-orange: #ec6107;
+  --habit-green: #309909;
+  --habit-cyan: #01a2c5;
+  --habit-indigo: #7769eb;
+  --habit-pink: #cc4394;
+
+  --habit-orange-ink: #15181f;
+  --habit-green-ink: #15181f;
+  --habit-cyan-ink: #15181f;
+  --habit-indigo-ink: #15181f;
+  --habit-pink-ink: #ffffff;
+
   color-scheme: light;
 }
 
@@ -46,6 +61,19 @@
   --shadow-md: 0 4px 16px rgb(0 0 0 / 0.45);
   --shadow-lg: 0 24px 60px rgb(0 0 0 / 0.6);
   --miss: #2b3140;
+
+  /* Dark is its own validated set, re-stepped for the dark surface. */
+  --habit-orange: #ea5f02;
+  --habit-green: #2e9804;
+  --habit-cyan: #049abb;
+  --habit-indigo: #7061e3;
+  --habit-pink: #c33b8c;
+
+  --habit-orange-ink: #0e1015;
+  --habit-green-ink: #0e1015;
+  --habit-cyan-ink: #0e1015;
+  --habit-indigo-ink: #ffffff;
+  --habit-pink-ink: #ffffff;
 
   color-scheme: dark;
 }

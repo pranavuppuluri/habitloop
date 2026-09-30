@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { WEEKDAY_SHORT } from '../lib/date'
 import {
   COLOR_KEYS,
+  COLOR_LABELS,
   HABIT_COLORS,
   TIMES_OF_DAY,
   type Area,
@@ -143,7 +144,7 @@ export function HabitForm({ habit, areas, presetName, presetIcon, onSave, onClos
               className="swatch"
               style={{ background: HABIT_COLORS[key as ColorKey] }}
               aria-pressed={draft.color === key}
-              aria-label={key}
+              aria-label={COLOR_LABELS[key]}
               onClick={() => set('color', key)}
             />
           ))}

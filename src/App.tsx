@@ -4,7 +4,8 @@ import { currentBucket, friendlyDate, todayKey } from './lib/date'
 import { dayProgress, getEntry, habitsOn, valueOn } from './lib/stats'
 import {
   EMPTY_DATA,
-  HABIT_COLORS,
+  colorVar,
+  nextColor,
   TIMES_OF_DAY,
   type AppData,
   type Habit,
@@ -166,7 +167,6 @@ export default function App() {
   }
 
   async function addStarter(starter: (typeof STARTERS)[number]) {
-    const colors = Object.keys(HABIT_COLORS) as (keyof typeof HABIT_COLORS)[]
     await mutate((u) =>
       backend
         .createHabit(
@@ -174,7 +174,7 @@ export default function App() {
           {
             name: starter.name,
             icon: starter.icon,
-            color: colors[data.habits.length % colors.length],
+            color: nextColor(data.habits.length),
             target: starter.target,
             unit: starter.unit,
             timeOfDay: starter.timeOfDay,
@@ -233,7 +233,7 @@ export default function App() {
                   setDetailId(habit.id)
                 }}
               >
-                <span className="nav-dot" style={{ background: HABIT_COLORS[habit.color] }} />
+                <span className="nav-dot" style={{ background: colorVar(habit.color) }} />
                 {habit.name}
               </button>
             ))}
@@ -392,7 +392,7 @@ export default function App() {
               <div className="card-list">
                 {archived.map((habit) => (
                   <article className="habit" key={habit.id}>
-                    <span className="nav-dot" style={{ background: HABIT_COLORS[habit.color], marginLeft: 12 }} />
+                    <span className="nav-dot" style={{ background: colorVar(habit.color), marginLeft: 12 }} />
                     <span className="habit-body">
                       <span className="habit-name">
                         {habit.icon} {habit.name}

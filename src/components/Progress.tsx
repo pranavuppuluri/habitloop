@@ -1,6 +1,6 @@
 import { dayRange, fromKey, monthName, todayKey } from '../lib/date'
 import { completionSeries, habitStats } from '../lib/stats'
-import { HABIT_COLORS, type AppData } from '../lib/types'
+import { colorVar, type AppData } from '../lib/types'
 
 interface ProgressProps {
   data: AppData
@@ -89,7 +89,7 @@ export function Progress({ data }: ProgressProps) {
               <tr key={habit.id}>
                 <td>
                   <span className="name">
-                    <span className="nav-dot" style={{ background: HABIT_COLORS[habit.color] }} />
+                    <span className="nav-dot" style={{ background: colorVar(habit.color) }} />
                     {habit.icon} {habit.name}
                   </span>
                 </td>

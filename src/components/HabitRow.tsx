@@ -1,6 +1,6 @@
 import { dayRange, friendlyDate } from '../lib/date'
 import { currentStreak, dayState, getEntry, valueOn } from '../lib/stats'
-import { HABIT_COLORS, type AppData, type Habit } from '../lib/types'
+import { colorVar, type AppData, type Habit } from '../lib/types'
 import { Dots } from './icons'
 import { Tick } from './Tick'
 
@@ -20,7 +20,7 @@ export function HabitRow({ habit, data, date, onTick, onOpen }: HabitRowProps) {
   const skipped = entry?.skipped ?? false
   const done = value >= habit.target
   const streak = currentStreak(data, habit)
-  const color = HABIT_COLORS[habit.color]
+  const color = colorVar(habit.color)
   const thread = dayRange(date, THREAD_DAYS)
 
   const classes = ['habit', done && !skipped ? 'is-done' : '', skipped ? 'is-skipped' : ''].filter(Boolean).join(' ')

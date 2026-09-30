@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { friendlyDate, fromKey } from '../lib/date'
 import { getEntry, habitStats } from '../lib/stats'
-import { HABIT_COLORS, type AppData, type Habit } from '../lib/types'
+import { colorVar, type AppData, type Habit } from '../lib/types'
 import { MonthHeat } from './MonthHeat'
 import { Sheet } from './Sheet'
 import { Pencil, Trash } from './icons'
@@ -33,7 +33,7 @@ export function HabitDetail({
   const value = entry?.value ?? 0
   const skipped = entry?.skipped ?? false
   const stats = habitStats(data, habit)
-  const color = HABIT_COLORS[habit.color]
+  const color = colorVar(habit.color)
 
   const [note, setNote] = useState(entry?.note ?? '')
   const [cursor, setCursor] = useState(() => {

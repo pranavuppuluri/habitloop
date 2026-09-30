@@ -1,4 +1,4 @@
-import { HABIT_COLORS, type Habit } from '../lib/types'
+import { colorVar, inkVar, type Habit } from '../lib/types'
 
 interface TickProps {
   habit: Habit
@@ -14,7 +14,11 @@ interface TickProps {
  * "how much is left" rather than just "done or not".
  */
 export function Tick({ habit, value, skipped, onClick, size = 38 }: TickProps) {
-  const color = HABIT_COLORS[habit.color]
+  const color = colorVar(habit.color)
+  // White is not automatically legible on a filled ring: on orange it is 3.34:1,
+  // where the dark ink reaches 5.31:1. Each colour carries whichever ink measured
+  // better against it.
+  const ink = inkVar(habit.color)
   const done = value >= habit.target
   const counted = habit.target > 1
   const share = Math.min(1, habit.target === 0 ? 0 : value / habit.target)
@@ -65,7 +69,7 @@ export function Tick({ habit, value, skipped, onClick, size = 38 }: TickProps) {
           <path
             d="M5 13l4.5 4.5L19 7"
             fill="none"
-            stroke="#fff"
+            stroke={ink}
             strokeWidth="3.2"
             strokeLinecap="round"
             strokeLinejoin="round"
