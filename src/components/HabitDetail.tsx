@@ -4,7 +4,7 @@ import { getEntry, habitStats } from '../lib/stats'
 import { colorVar, type AppData, type Habit } from '../lib/types'
 import { MonthHeat } from './MonthHeat'
 import { Sheet } from './Sheet'
-import { Pencil, Trash } from './icons'
+import { Archive, Left, Pencil, Right, Trash } from './icons'
 
 interface HabitDetailProps {
   habit: Habit
@@ -15,6 +15,11 @@ interface HabitDetailProps {
   onNote: (note: string) => void
   onEdit: () => void
   onDelete: () => void
+  onArchive: () => void
+  /** Shifts the habit's place in the list. -1 is earlier, 1 is later. */
+  onMove: (delta: number) => void
+  canMoveUp: boolean
+  canMoveDown: boolean
   onClose: () => void
 }
 
@@ -27,6 +32,10 @@ export function HabitDetail({
   onNote,
   onEdit,
   onDelete,
+  onArchive,
+  onMove,
+  canMoveUp,
+  canMoveDown,
   onClose,
 }: HabitDetailProps) {
   const entry = getEntry(data, habit.id, date)
@@ -62,6 +71,9 @@ export function HabitDetail({
         <>
           <button className="btn btn-danger" onClick={onDelete}>
             <Trash /> Delete
+          </button>
+          <button className="btn btn-quiet" onClick={onArchive} title="Keep the history, hide it from Today">
+            <Archive /> Archive
           </button>
           <span className="spacer" />
           <button className="btn btn-quiet" onClick={onEdit}>
@@ -101,6 +113,19 @@ export function HabitDetail({
           </button>
         </div>
         <p className="help">A skipped day keeps the streak alive without counting toward it.</p>
+      </div>
+
+      <div className="field">
+        <span className="field-label">Place in the list</span>
+        <div className="stepper" style={{ display: 'inline-flex' }}>
+          <button onClick={() => onMove(-1)} disabled={!canMoveUp} aria-label="Move earlier">
+            <Left />
+          </button>
+          <button onClick={() => onMove(1)} disabled={!canMoveDown} aria-label="Move later">
+            <Right />
+          </button>
+        </div>
+        <p className="help">Habits can also be dragged into order on the Today list.</p>
       </div>
 
       <div className="stat-grid">

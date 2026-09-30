@@ -12,13 +12,15 @@ import {
   type HabitDraft,
   type User,
 } from './lib/types'
+import { askForReminders, pendingCount, reminderPermission, scheduleReminders, type Permission } from './lib/reminders'
+import { AreasSheet } from './components/AreasSheet'
 import { Auth } from './components/Auth'
 import { DateRail } from './components/DateRail'
 import { HabitDetail } from './components/HabitDetail'
 import { HabitForm } from './components/HabitForm'
 import { HabitRow } from './components/HabitRow'
 import { Progress } from './components/Progress'
-import { Archive, Chart, Exit, Logo, Moon, Plus, Sun, Today } from './components/icons'
+import { Archive, Bell, Chart, Exit, Folder, Logo, Moon, Plus, Sun, Today } from './components/icons'
 
 type View = 'today' | 'progress' | 'archive'
 type Theme = 'light' | 'dark'
@@ -55,6 +57,12 @@ export default function App() {
   const [formFor, setFormFor] = useState<{ habit: Habit | null; preset?: (typeof STARTERS)[number] } | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [loadError, setLoadError] = useState('')
+  const [areasOpen, setAreasOpen] = useState(false)
+  const [areaFilter, setAreaFilter] = useState<string | null>(null)
+  const [notify, setNotify] = useState<Permission>(() => reminderPermission())
+  // Which row is being dragged, and which row it is currently hovering over.
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -66,6 +74,13 @@ export default function App() {
     const t = setTimeout(() => setToast(null), 5000)
     return () => clearTimeout(t)
   }, [toast])
+
+  // Re-armed whenever habits or check-ins change, so finishing a habit cancels
+  // its reminder and editing a time takes effect immediately.
+  useEffect(() => {
+    if (notify !== 'granted') return
+    return scheduleReminders(data)
+  }, [data, notify])
 
   const refresh = useCallback(async (u: User) => {
     try {
@@ -142,7 +157,11 @@ export default function App() {
 
   const active = useMemo(() => data.habits.filter((h) => !h.archived), [data.habits])
   const archived = useMemo(() => data.habits.filter((h) => h.archived), [data.habits])
-  const scheduled = useMemo(() => habitsOn(data, date), [data, date])
+  const scheduled = useMemo(
+    () => habitsOn(data, date).filter((h) => areaFilter === null || h.areaId === areaFilter),
+    [data, date, areaFilter],
+  )
+  const orderedActive = useMemo(() => [...active].sort((a, b) => a.position - b.position), [active])
   const progress = dayProgress(data, date)
   const detail = detailId ? data.habits.find((h) => h.id === detailId) ?? null : null
   const bucket = currentBucket()
@@ -188,6 +207,55 @@ export default function App() {
     )
   }
 
+  async function archiveHabit(habit: Habit) {
+    setDetailId(null)
+    await mutate((u) => backend.updateHabit(u, habit.id, { archived: true }))
+    setToast({
+      message: `${habit.name} archived`,
+      undo: () => {
+        mutate((u) => backend.updateHabit(u, habit.id, { archived: false }))
+        setToast(null)
+      },
+    })
+  }
+
+  /**
+   * Reorders the whole active list, then renumbers it 0..n-1. Positions are
+   * global while the Today view renders them grouped by time of day, so working
+   * on the flat list keeps both views consistent.
+   */
+  async function reorder(sourceId: string, targetId: string) {
+    if (sourceId === targetId) return
+    const ordered = [...active].sort((a, b) => a.position - b.position)
+    const from = ordered.findIndex((h) => h.id === sourceId)
+    const to = ordered.findIndex((h) => h.id === targetId)
+    if (from < 0 || to < 0) return
+
+    const [moved] = ordered.splice(from, 1)
+    ordered.splice(to, 0, moved)
+    await mutate((u) => backend.reorderHabits(u, ordered.map((h, i) => ({ id: h.id, position: i }))))
+  }
+
+  /** The keyboard route to reordering, from the detail sheet. */
+  async function moveHabit(habit: Habit, delta: number) {
+    const ordered = [...active].sort((a, b) => a.position - b.position)
+    const index = ordered.findIndex((h) => h.id === habit.id)
+    const target = ordered[index + delta]
+    if (!target) return
+    await reorder(habit.id, target.id)
+  }
+
+  async function enableReminders() {
+    const result = await askForReminders()
+    setNotify(result)
+    if (result === 'granted') {
+      const n = pendingCount(data)
+      setToast({ message: n ? `Reminders on. ${n} still due today.` : 'Reminders on.' })
+    } else if (result === 'denied') {
+      setToast({ message: 'Your browser is blocking notifications for this site.' })
+    }
+  }
+
   async function deleteHabit(habit: Habit) {
     if (!confirm(`Delete "${habit.name}" and all of its check-ins? This cannot be undone.`)) return
     setDetailId(null)
@@ -221,6 +289,31 @@ export default function App() {
           </button>
         )}
 
+        <button className="nav-item" onClick={() => setAreasOpen(true)}>
+          <Folder /> Areas
+          {data.areas.length > 0 && <span className="count">{data.areas.length}</span>}
+        </button>
+
+        {data.areas.length > 0 && (
+          <>
+            <div className="nav-label">Filter by area</div>
+            <button className="nav-item" aria-current={areaFilter === null} onClick={() => setAreaFilter(null)}>
+              All habits
+            </button>
+            {data.areas.map((area) => (
+              <button
+                key={area.id}
+                className="nav-item"
+                aria-current={areaFilter === area.id}
+                onClick={() => setAreaFilter(area.id)}
+              >
+                {area.name}
+                <span className="count">{active.filter((h) => h.areaId === area.id).length}</span>
+              </button>
+            ))}
+          </>
+        )}
+
         {active.length > 0 && (
           <>
             <div className="nav-label">Habits</div>
@@ -241,6 +334,11 @@ export default function App() {
         )}
 
         <div className="sidebar-foot">
+          {notify !== 'unsupported' && notify !== 'granted' && (
+            <button className="nav-item" onClick={enableReminders} disabled={notify === 'denied'}>
+              <Bell /> {notify === 'denied' ? 'Reminders blocked' : 'Turn on reminders'}
+            </button>
+          )}
           <button
             className="nav-item"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -358,6 +456,21 @@ export default function App() {
                               date={date}
                               onTick={() => tick(habit)}
                               onOpen={() => setDetailId(habit.id)}
+                              drag={{
+                                isDragging: dragId === habit.id,
+                                isTarget: overId === habit.id && dragId !== habit.id,
+                                onStart: () => setDragId(habit.id),
+                                onOver: () => setOverId(habit.id),
+                                onEnd: () => {
+                                  setDragId(null)
+                                  setOverId(null)
+                                },
+                                onDrop: () => {
+                                  if (dragId) reorder(dragId, habit.id)
+                                  setDragId(null)
+                                  setOverId(null)
+                                },
+                              }}
                             />
                           ))}
                         </div>
@@ -443,7 +556,28 @@ export default function App() {
             setFormFor({ habit: detail })
           }}
           onDelete={() => deleteHabit(detail)}
+          onArchive={() => archiveHabit(detail)}
+          onMove={(delta) => moveHabit(detail, delta)}
+          canMoveUp={orderedActive.findIndex((h) => h.id === detail.id) > 0}
+          canMoveDown={
+            orderedActive.findIndex((h) => h.id === detail.id) < orderedActive.length - 1
+          }
           onClose={() => setDetailId(null)}
+        />
+      )}
+
+      {areasOpen && (
+        <AreasSheet
+          areas={data.areas}
+          habits={data.habits}
+          onCreate={(name) =>
+            mutate((u) => backend.createArea(u, name, data.areas.length).then(() => undefined))
+          }
+          onDelete={async (id) => {
+            if (areaFilter === id) setAreaFilter(null)
+            await mutate((u) => backend.deleteArea(u, id))
+          }}
+          onClose={() => setAreasOpen(false)}
         />
       )}
 

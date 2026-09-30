@@ -119,3 +119,16 @@ export const Pencil = ({ size = 16 }: IconProps) => (
     <path d="M4 20h4L20 8l-4-4L4 16z" />
   </svg>
 )
+
+export const Bell = ({ size = 17 }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+  </svg>
+)
+
+export const Folder = ({ size = 17 }: IconProps) => (
+  <svg {...base(size)}>
+    <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+  </svg>
+)

@@ -10,11 +10,20 @@ interface HabitRowProps {
   date: string
   onTick: () => void
   onOpen: () => void
+  /** Drag-to-reorder. Omit to make the row static. */
+  drag?: {
+    onStart: () => void
+    onOver: () => void
+    onDrop: () => void
+    onEnd: () => void
+    isDragging: boolean
+    isTarget: boolean
+  }
 }
 
 const THREAD_DAYS = 12
 
-export function HabitRow({ habit, data, date, onTick, onOpen }: HabitRowProps) {
+export function HabitRow({ habit, data, date, onTick, onOpen, drag }: HabitRowProps) {
   const value = valueOn(data, habit.id, date)
   const entry = getEntry(data, habit.id, date)
   const skipped = entry?.skipped ?? false
@@ -23,10 +32,38 @@ export function HabitRow({ habit, data, date, onTick, onOpen }: HabitRowProps) {
   const color = colorVar(habit.color)
   const thread = dayRange(date, THREAD_DAYS)
 
-  const classes = ['habit', done && !skipped ? 'is-done' : '', skipped ? 'is-skipped' : ''].filter(Boolean).join(' ')
+  const classes = [
+    'habit',
+    done && !skipped ? 'is-done' : '',
+    skipped ? 'is-skipped' : '',
+    drag?.isDragging ? 'is-dragging' : '',
+    drag?.isTarget ? 'is-drop-target' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
-    <article className={classes}>
+    <article
+      className={classes}
+      draggable={Boolean(drag)}
+      onDragStart={drag && (() => drag.onStart())}
+      onDragEnd={drag && (() => drag.onEnd())}
+      onDragOver={
+        drag &&
+        ((e) => {
+          // Without preventDefault the browser refuses the drop.
+          e.preventDefault()
+          drag.onOver()
+        })
+      }
+      onDrop={
+        drag &&
+        ((e) => {
+          e.preventDefault()
+          drag.onDrop()
+        })
+      }
+    >
       <Tick habit={habit} value={value} skipped={skipped} onClick={onTick} />
 
       <button className="habit-body" onClick={onOpen}>
