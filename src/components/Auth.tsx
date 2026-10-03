@@ -36,7 +36,7 @@ export function Auth({ onSignedIn }: AuthProps) {
       <div className="auth-card">
         <div className="auth-brand">
           <Logo size={28} />
-          <span className="brand-name">Habitloop</span>
+          <span className="brand-name">HabitNow</span>
         </div>
 
         <h1>{mode === 'up' ? 'Start your first streak' : 'Welcome back'}</h1>

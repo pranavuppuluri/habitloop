@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { backend, cloudConfigured } from './backend'
 import { currentBucket, friendlyDate, todayKey } from './lib/date'
+import { storageKey } from './lib/storage'
 import { dayProgress, getEntry, habitsOn, valueOn } from './lib/stats'
 import {
   EMPTY_DATA,
@@ -35,7 +36,7 @@ const STARTERS = [
 ]
 
 function readTheme(): Theme {
-  const saved = localStorage.getItem('habitloop.theme')
+  const saved = localStorage.getItem(storageKey('theme'))
   if (saved === 'light' || saved === 'dark') return saved
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
@@ -66,7 +67,7 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem('habitloop.theme', theme)
+    localStorage.setItem(storageKey('theme'), theme)
   }, [theme])
 
   useEffect(() => {
@@ -270,7 +271,7 @@ export default function App() {
       <aside className="sidebar">
         <div className="brand">
           <Logo size={24} />
-          <span className="brand-name">Habitloop</span>
+          <span className="brand-name">HabitNow</span>
         </div>
 
         <button className="nav-item" aria-current={view === 'today'} onClick={() => setView('today')}>

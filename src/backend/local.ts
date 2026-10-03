@@ -1,5 +1,6 @@
 import { EMPTY_DATA, type AppData, type Area, type Habit, type User } from '../lib/types'
 import { entryKey } from '../lib/stats'
+import { storageKey } from '../lib/storage'
 import { AuthError, type Backend } from './types'
 
 /**
@@ -10,9 +11,9 @@ import { AuthError, type Backend } from './types'
  * not real security. Configure Supabase for accounts that actually travel.
  */
 
-const USERS_KEY = 'habitloop.users.v1'
-const SESSION_KEY = 'habitloop.session.v1'
-const dataKey = (userId: string) => `habitloop.data.v1.${userId}`
+const USERS_KEY = storageKey('users.v1')
+const SESSION_KEY = storageKey('session.v1')
+const dataKey = (userId: string) => storageKey(`data.v1.${userId}`)
 
 interface StoredUser {
   id: string

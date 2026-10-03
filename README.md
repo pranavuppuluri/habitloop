@@ -1,4 +1,4 @@
-# Habitloop
+# HabitNow
 
 A habit tracker in the browser. Check habits off day by day, grouped by time of
 day, and watch each streak build. Free to host end to end.
@@ -51,7 +51,7 @@ colours apart.
 ## Reminders, honestly
 
 Reminders are local notifications scheduled by the open page. They fire while
-Habitloop is open — a background tab counts, and so does the installed app — and
+HabitNow is open — a background tab counts, and so does the installed app — and
 they do **not** fire once it is fully closed.
 
 Firing when the app is closed needs a server to send a push message: a service
@@ -119,15 +119,15 @@ project.
 
 ## Publish it free on GitHub Pages
 
-No domain and no hosting bill. You get `https://<your-user>.github.io/habitloop`
+No domain and no hosting bill. You get `https://<your-user>.github.io/habitnow`
 with HTTPS included.
 
 ```bash
 git init
 git add .
-git commit -m "Habitloop"
+git commit -m "HabitNow"
 git branch -M main
-git remote add origin https://github.com/<your-user>/habitloop.git
+git remote add origin https://github.com/<your-user>/habitnow.git
 git push -u origin main
 ```
 

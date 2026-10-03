@@ -1,4 +1,4 @@
--- Habitloop schema. Paste this into the Supabase SQL editor and run it once.
+-- HabitNow schema. Paste this into the Supabase SQL editor and run it once.
 --
 -- Every table is scoped to auth.uid() through row-level security, so the public
 -- anon key can only ever read or write the signed-in person's own rows.

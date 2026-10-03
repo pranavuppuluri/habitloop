@@ -14,8 +14,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/icon.svg', 'icons/icon-180.png'],
       manifest: {
-        name: 'Habitloop',
-        short_name: 'Habitloop',
+        name: 'HabitNow',
+        short_name: 'HabitNow',
         description: 'Build habits one day at a time. Track streaks, see your ledger of days.',
         // Relative so an install from a repo subpath scopes to that subpath.
         start_url: '.',

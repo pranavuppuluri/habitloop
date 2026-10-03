@@ -17,12 +17,12 @@ const EVERY_DAY = [0, 1, 2, 3, 4, 5, 6]
 function seed({ withHistory = true } = {}) {
   const userId = 'test-user'
   localStorage.setItem(
-    'habitloop.users.v1',
+    'habitnow.users.v1',
     JSON.stringify({
       'a@b.com': { id: userId, email: 'a@b.com', name: 'Test', salt: 's', hash: 'x' },
     }),
   )
-  localStorage.setItem('habitloop.session.v1', userId)
+  localStorage.setItem('habitnow.session.v1', userId)
 
   const created = `${addDays(todayKey(), -60)}T00:00:00.000Z`
   const habits = [
@@ -55,7 +55,7 @@ function seed({ withHistory = true } = {}) {
   }
 
   localStorage.setItem(
-    `habitloop.data.v1.${userId}`,
+    `habitnow.data.v1.${userId}`,
     JSON.stringify({ habits, areas: [{ id: 'ar1', name: 'Health', position: 0 }], entries }),
   )
 }

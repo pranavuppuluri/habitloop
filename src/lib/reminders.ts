@@ -5,7 +5,7 @@
  * same thing:
  *
  * These are LOCAL notifications, scheduled by the open page. They fire while
- * Habitloop is open in a tab or as an installed app - including when that window
+ * HabitNow is open in a tab or as an installed app - including when that window
  * is in the background. They do NOT fire when the app is fully closed.
  *
  * Firing when the app is closed needs a push message from a server: a service
@@ -17,10 +17,11 @@
  */
 
 import { todayKey } from './date'
+import { storageKey } from './storage'
 import type { AppData, Habit } from './types'
 import { isScheduled, valueOn } from './stats'
 
-const FIRED_KEY = 'habitloop.reminders.fired.v1'
+const FIRED_KEY = storageKey('reminders.fired.v1')
 
 export type Permission = 'unsupported' | 'default' | 'granted' | 'denied'
 
@@ -92,7 +93,7 @@ function show(habit: Habit): void {
   try {
     new Notification(`${habit.icon} ${habit.name}`, {
       body: habit.target > 1 ? `Time for your ${habit.target} ${habit.unit}.` : 'Time to check this one off.',
-      tag: `habitloop-${habit.id}`,
+      tag: `habitnow-${habit.id}`,
       icon: './icons/icon-192.png',
     })
     markFired(habit.id)
